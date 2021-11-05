@@ -1,7 +1,6 @@
 'use strict';
 
 const MUSE_SERVICE = 0xfe8d;
-const EEG_FREQUENCY = 256;
 
 // Since the characteristics uuids listed on the muse band s seem to be identical
 // to older versions of the band, we can simply use the same uuids.
@@ -55,7 +54,8 @@ class MuseS {
     this.buttons = {
       scan: document.querySelector('#scan'),
       disconnect: document.querySelector('#disconnect'),
-      subscribe: document.querySelector('#subscribe'),
+      start: document.querySelector('#start'),
+      pause: document.querySelector('#pause'),
     };
     this.setupEventHandlers();
   }
@@ -96,7 +96,7 @@ class MuseS {
 
   connect(device) {
     this.device = device;
-    this.device.addEventListener('gattserverdisconnected', this.onDisconnected);
+    this.device.addEventListener('gattserverdisconnected', (event) => this.onDisconnected(event));
 
     this.log.log('Connecting to bluetooth device...');
     return this.device.gatt.connect()
@@ -114,12 +114,25 @@ class MuseS {
   // We successfully connected to the devices.
   onConnected() {
     this.buttons.disconnect.removeAttribute('disabled');
-    this.buttons.subscribe.removeAttribute('disabled');
+    this.buttons.start.removeAttribute('disabled');
   }
 
   onDisconnected(event) {
     // Object event.target is Bluetooth Device getting disconnected.
-    this.log.log('> Bluetooth Device disconnected');
+    this.log.log('> Bluetooth device disconnected');
+    this.buttons.start.setAttribute('disabled', 'disabled');
+    this.buttons.pause.setAttribute('disabled', 'disabled');
+    this.buttons.disconnect.setAttribute('disabled', 'disabled');
+  }
+
+  onStarted(event) {
+    this.buttons.start.setAttribute('disabled', 'disabled');
+    this.buttons.pause.removeAttribute('disabled');
+  }
+
+  onPaused(event) {
+    this.buttons.start.removeAttribute('disabled');
+    this.buttons.pause.setAttribute('disabled', 'disabled');
   }
 
   setupEventHandlers() {
@@ -129,18 +142,21 @@ class MuseS {
     });
 
     this.buttons.disconnect.addEventListener('click', () => {
-      if (this.deviceIsConnected()) {
-        this.log('Disconnecting bluetooth device...');
-        bluetoothDevice.gatt.disconnect();
+      if (this.device) {
+        this.device.gatt.disconnect();
       }
       else {
-        this.log('> Bluetooth device was not connected.');
+        this.log.log('> Bluetooth device was not connected.');
       }
     });
 
-    this.buttons.subscribe.addEventListener('click', () => {
+    this.buttons.start.addEventListener('click', () => {
       this.setupDataCharacteristicsEventHandlers();
       this.start();
+    });
+
+    this.buttons.pause.addEventListener('click', () => {
+      this.pause();
     });
   }
 
@@ -180,11 +196,17 @@ class MuseS {
         characteristic.writeValue(this.getCommand('PRESET_20'));
         characteristic.writeValue(this.getCommand('START'));
         characteristic.writeValue(this.getCommand('RESUME'));
+        this.onStarted();
       })
   }
 
   pause() {
-
+    this.service.getCharacteristic(CHARACTERISTICS.CONTROL)
+      .then(characteristic => {
+        this.controlCharacteristic = characteristic
+        characteristic.writeValue(this.getCommand('PAUSE'));
+        this.onPaused();
+      })
   }
 
   getCommand(name) {
@@ -205,7 +227,7 @@ class MuseS {
         data = this.parser.parseGyroscope(event.target.value);
         // Note that each data objects contains an array of 3 samples in
         // data.samples, each with their x, y and z values.
-        //this.log.log('> Gyroscope', data.samples[0]);
+        this.log.log('> Gyroscope', data.samples[0]);
         break;
 
       case CHARACTERISTICS.ACCELEROMETER:

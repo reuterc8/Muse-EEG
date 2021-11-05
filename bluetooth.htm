@@ -15,7 +15,8 @@
     <div class="buttons">
       <button id="scan">Scan</button>
       <button id="disconnect" disabled="disabled">Disconnect</button>
-      <button id="subscribe" disabled="disabled">Stream Starten</button>
+      <button id="start" disabled="disabled">Stream starten</button>
+      <button id="pause" disabled="disabled">Stream pausieren</button>
     </div>
 
     <h3>Live Output</h3>
@@ -174,22 +175,9 @@ alert();
    </p>
 
 
-    <script>
-      const log = new Logging();
-      try {
-        window.muse = new MuseS(log, navigator);
-      }
-      catch(e) {
-        log.log('Error setting up bluetooth.');
-      }
-
-      /*
-      window.addEventListener('error', function (error) {
-        console.error(error);
-        log.setStatus(error.message + ' (Your browser may not support this feature.)');
-        error.preventDefault();
-      });
-      */
-    </script>
+  <script>
+    const log = new Logging();
+    window.muse = new MuseS(log, navigator);
+  </script>
 </body>
 </html>
