@@ -1,5 +1,6 @@
 'use strict';
 
+const MUSE_S_DEVICE_NAME = 'MuseS-36B3';
 const MUSE_SERVICE = 0xfe8d;
 
 // Since the characteristics uuids listed on the muse band s seem to be identical
@@ -83,7 +84,7 @@ class MuseS {
     this.log.log('Requesting Bluetooth Device...');
     return this.bluetooth.requestDevice({
       filters: [{
-        name: 'MuseS-36B3',
+        name: MUSE_S_DEVICE_NAME,
       }],
     })
       .then(device => {
