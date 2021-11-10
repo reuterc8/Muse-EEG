@@ -80,12 +80,12 @@ class MuseS {
   }
 
   scanAndConnect() {
-    var options = {filters: []};
-    //options.filters.push({namePrefix: 'MuseS'});
-    options.filters.push({name: 'MuseS-36B3'});
-
     this.log.log('Requesting Bluetooth Device...');
-    return this.bluetooth.requestDevice({acceptAllDevices: true})
+    return this.bluetooth.requestDevice({
+      filters: [{
+        name: 'MuseS-36B3',
+      }],
+    })
       .then(device => {
         return this.connect(device);
       })
